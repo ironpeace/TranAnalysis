@@ -7,13 +7,16 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.security.*;
+import org.apache.commons.codec.binary.Base64;
+
 
 public class DataConverter {
 
 	public static void main(String[] args) {
 		
 		String in_file_name = args[0];
-		String out_file_name = args[1];
+		String out_path = args[1];
 		
 		int COL_NO_CUSTOMER_ID = 0;
 		int COL_NO_FROM_BRANCH_NO = 1;
@@ -31,7 +34,7 @@ public class DataConverter {
 		int cnt = 0;
 		
 		try {
-            //ファイルを読み込む
+			//ファイルを読み込む
             FileReader fr = new FileReader(in_file_name);
             BufferedReader br = new BufferedReader(fr);
 
@@ -83,9 +86,12 @@ public class DataConverter {
             
             System.out.println("s : " + shimukeList.size() + ", h : " + hishimukeList.size());
             
-            FileWriter fw = new FileWriter(out_file_name, false);
+            FileWriter fw = new FileWriter(out_path + "graphdata.csv", false);
+            FileWriter enfw = new FileWriter(out_path + "encrypted_graphdata.csv", false);
             PrintWriter pw = new PrintWriter(new BufferedWriter(fw));
+            PrintWriter enpw = new PrintWriter(new BufferedWriter(enfw));
         	pw.println("source,target,value");
+        	enpw.println("source,target,value");
             
             for(Trandata shimuke : shimukeList){
             	GraphData gd = new GraphData();
@@ -121,11 +127,14 @@ public class DataConverter {
             	}
             	
             	System.out.println(gd.getFrom() + "," + gd.getTo() + "," + gd.getValue());
-            	pw.println(gd.getFrom() + "," + gd.getTo() + "," + gd.getValue());
+            	
+        		pw.println(gd.getFrom() + "," + gd.getTo() + "," + gd.getValue());
+        		enpw.println(encrypt(gd.getFrom()) + "," + encrypt(gd.getTo()) + "," + gd.getValue());
             }
             
             //ファイルに書き出す
             pw.close();
+            enpw.close();
 
         } catch (Exception ex) {
             //例外発生時処理
@@ -133,6 +142,14 @@ public class DataConverter {
         }		
 	}
 
+	public static String encrypt (String target) throws NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance("SHA-1");
+		md.update(target.getBytes());
+		byte[] digest = md.digest();
+		byte[] encodedBytes = Base64.encodeBase64(digest);
+		return new String(encodedBytes);
+	}	
+	
 }
 
 final class GraphData{
