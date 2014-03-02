@@ -41,14 +41,13 @@ public class DataConverter {
             List<Trandata> shimukeList = new ArrayList<Trandata>();
             List<Trandata> hishimukeList = new ArrayList<Trandata>();
             
-            
             //読み込んだファイルを１行ずつ処理する
             String line;
             while ((line = br.readLine()) != null) {
+            	cnt++;
             	
             	//１行目はスキップ
-            	if(cnt == 0){
-            		cnt++;
+            	if(cnt == 1){
             		continue;
             	}
             	
@@ -84,7 +83,8 @@ public class DataConverter {
             //終了処理
             br.close();
             
-            System.out.println("s : " + shimukeList.size() + ", h : " + hishimukeList.size());
+//            System.out.println("s : " + shimukeList.size() + ", h : " + hishimukeList.size());
+            System.out.println(cnt + "件読み込み完了");
             
             FileWriter fw = new FileWriter(out_path + "graphdata.csv", false);
             FileWriter enfw = new FileWriter(out_path + "encrypted_graphdata.csv", false);
@@ -93,6 +93,13 @@ public class DataConverter {
         	pw.println("source,target,value");
         	enpw.println("source,target,value");
             
+        	int total = shimukeList.size();
+        	int done = 0;
+        	int percent = 0;
+        	int outCnt = 0;
+        	
+        	List<String> patterns = new ArrayList<String>();
+        	
             for(Trandata shimuke : shimukeList){
             	GraphData gd = new GraphData();
             	gd.setFrom(BTMU_CODE +"-" 
@@ -126,15 +133,36 @@ public class DataConverter {
             		}
             	}
             	
-            	System.out.println(gd.getFrom() + "," + gd.getTo() + "," + gd.getValue());
+//            	System.out.println(gd.getFrom() + "," + gd.getTo() + "," + gd.getValue());
             	
-        		pw.println(gd.getFrom() + "," + gd.getTo() + "," + gd.getValue());
-        		enpw.println(encrypt(gd.getFrom()) + "," + encrypt(gd.getTo()) + "," + gd.getValue());
+            	String pattern = gd.getFrom() + "," + gd.getTo();
+            	if(!patterns.contains(pattern)){
+            		patterns.add(pattern);
+            		
+            		pw.println(gd.getFrom() + "," + gd.getTo() + "," + gd.getValue());
+            		enpw.println(encrypt(gd.getFrom()) + "," + encrypt(gd.getTo()) + "," + gd.getValue());
+            		outCnt++;
+            	}
+            	
+            	done++;
+            	int p = Math.round(done / total * 100);
+            	for(int i=0; i < (p - percent); i++){
+            		System.out.print("#");
+            	}
+            	percent = p;
             }
             
             //ファイルに書き出す
             pw.close();
             enpw.close();
+            
+            //debug
+            if(outCnt != patterns.size()){
+            	throw new Exception("出力件数とパターン数が相違（出力件数：" + outCnt + ", パターン数:" + patterns.size());
+            }
+            
+            System.out.println("\n" + outCnt + "件書き出し完了");
+//            System.out.println(patterns.size());
 
         } catch (Exception ex) {
             //例外発生時処理
